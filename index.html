@@ -126,6 +126,7 @@ var con=document.getElementById('psecs');con.innerHTML='';
 var ord=[G.hi];for(var i=0;i<G.pc;i++)if(i!==G.hi)ord.push(i);
 ord.forEach(function(pi){
 var p=G.pl[pi];
+var own=pi===G.hi;
 var s=document.createElement('div');s.className='psec';
 if(pi===G.cur)s.className+=' cur';if(p.out)s.className+=' out';
 var nd=document.createElement('div');nd.className='pname';nd.innerHTML=p.nm;
@@ -135,7 +136,7 @@ s.appendChild(nd);
 var rw=document.createElement('div');rw.className='crow';
 p.cs.forEach(function(c,ci){
 var el=document.createElement('div');el.className='crd';
-var own=pi===G.hi;var show=own||c.r;
+var show=own||c.r;
 if(show){el.className+=' '+cc(c);el.textContent=c.j?'*':c.n;if(c.r&&own)el.className+=' cpub';}
 else{el.className+=' cback';}
 if(G.ph==='guess'&&!p.out&&!c.r&&pi!==G.hi){el.className+=' sel';if(G.gt&&G.gt.pi===pi&&G.gt.ci===ci)el.className+=' stgt';el.onclick=(function(pi2,ci2){return function(){G.gt={pi:pi2,ci:ci2};ren();};})(pi,ci);}
