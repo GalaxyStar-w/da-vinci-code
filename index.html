@@ -152,7 +152,21 @@ document.getElementById('tinfo').textContent=cp.out?'':('Turn: '+cp.nm);
 document.getElementById('dinfo').textContent='Deck: '+G.deck.length;
 if(G.ph==='sort'&&!G.sa){var b=document.createElement('button');b.className='bact bcnf';b.textContent='I see my cards, start';b.onclick=function(){G.sa=true;G.ph='draw';ren();};aa.appendChild(b);return;}
 if(G.ph==='draw'){if(cp.ih){var b=document.createElement('button');b.className='bact bcnf';b.textContent='Draw a card';b.onclick=hDraw;aa.appendChild(b);}else{aiTurn();}return;}
-if(G.ph==='drawn'){var da=document.createElement('div');da.className='darea';da.innerHTML='<span class="dlbl">You drew: </span>';var c=G.drawn;var el=document.createElement('div');el.className='crd '+cc(c);el.textContent=c.j?'*':c.n;da.appendChild(el);aa.appendChild(da);renGP(aa);return;}
+if(G.ph==='drawn'){
+var da=document.createElement('div');da.className='darea';da.innerHTML='<span class="dlbl">You drew: </span>';var c=G.drawn;var el=document.createElement('div');el.className='crd '+cc(c);el.textContent=c.j?'*':c.n;da.appendChild(el);aa.appendChild(da);
+if(cp.ih){renGP(aa);return;}
+else{setTimeout(function(){
+chkElim();if(chkWin())return;
+var ai=G.pl[G.cur];if(ai.out||G.ph==='over'){nextT();return;}
+var hc=ai.cs.filter(function(x){return!x.r;});
+if(hc.length>0&&G.drawn){
+var ti=ai.cs.indexOf(hc[Math.floor(Math.random()*hc.length)]);
+var tc=ai.cs[ti];var ok=false;
+if(G.jk){ok=tc.j;if(!ok)ok=Math.random()<0.25;}
+else{if(!tc.j){var ec=COLORS[Math.floor(Math.random()*2)];ok=(tc.c===ec&&tc.n===G.drawn.n);}}
+if(ok){tc.r=true;msg(ai.nm+' guessed correctly! '+cl(tc)+' revealed.');chkElim();}
+else{G.drawn.r=true;msg(ai.nm+' guessed wrong! Their card revealed.');}
+}nextT();},1000);return;}}
 if(G.ph==='gres'){var da=document.createElement('div');da.className='darea';da.innerHTML='<span class="dlbl">You drew: </span>';var c=G.drawn;var el=document.createElement('div');el.className='crd '+cc(c);el.textContent=c.j?'*':c.n;da.appendChild(el);aa.appendChild(da);var bs=document.createElement('div');bs.className='abtn';if(G.lastOk){var bc=document.createElement('button');bc.className='bact bcnt';bc.textContent='Continue guessing';bc.onclick=function(){G.ph='drawn';G.gt=null;G.gc=null;G.gn=null;G.gj=false;ren();};bs.appendChild(bc);var be=document.createElement('button');be.className='bact bend';be.textContent='End turn (insert card)';be.onclick=function(){insCard(false);};bs.appendChild(be);}aa.appendChild(bs);return;}
 if(G.ph==='iwrong'){var da=document.createElement('div');da.className='darea';da.innerHTML='<span class="dlbl">Wrong! Your card is revealed: </span>';var c=G.drawn;var el=document.createElement('div');el.className='crd '+cc(c)+' cpub';el.textContent=c.j?'*':c.n;da.appendChild(el);aa.appendChild(da);setTimeout(function(){insCard(true);},1200);return;}
 }
