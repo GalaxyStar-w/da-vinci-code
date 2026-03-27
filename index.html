@@ -139,7 +139,7 @@ var el=document.createElement('div');el.className='crd';
 var show=own||c.r;
 if(show){el.className+=' '+cc(c);el.textContent=c.j?'*':c.n;if(c.r&&own)el.className+=' cpub';}
 else{el.className+=' cback';}
-if(G.ph==='guess'&&!p.out&&!c.r&&pi!==G.hi){el.className+=' sel';if(G.gt&&G.gt.pi===pi&&G.gt.ci===ci)el.className+=' stgt';el.onclick=(function(pi2,ci2){return function(){G.gt={pi:pi2,ci:ci2};ren();};})(pi,ci);}
+if(G.ph==='drawn'&&!p.out&&!c.r&&pi!==G.hi){el.className+=' sel';if(G.gt&&G.gt.pi===pi&&G.gt.ci===ci)el.className+=' stgt';el.onclick=(function(pi2,ci2){return function(){G.gt={pi:pi2,ci:ci2};ren();};})(pi,ci);}
 rw.appendChild(el);
 });
 s.appendChild(rw);
