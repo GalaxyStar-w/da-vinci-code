@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杈捐姮濂囧瘑鐮佹娓?/title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg1:#0a0a1a;--bg2:#1a1a2e;--bg3:#16213e;--card-w:50px;--card-h:72px;--accent:#e94560;--gold:#f5c518;--text:#e0e0e0;--dim:#888}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));color:var(--text);min-height:100vh;overflow-x:hidden}
+button{cursor:pointer;border:none;font-family:inherit}
+/* Setup */
+#setup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:24px;padding:20px;text-align:center}
+#setup h1{font-size:2.4em;background:linear-gradient(90deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#setup .subtitle{color:var(--dim);font-size:.95em;max-width:400px;line-height:1.5}
+.setup-group{background:rgba(255,255,255,.05);border-radius:16px;padding:24px 32px;display:flex;flex-direction:column;gap:16px;min-width:280px}
+.setup-group label{font-size:.95em;color:var(--dim)}
+.setup-group .btn-row{display:flex;gap:10px;justify-content:center}
+.btn-opt{padding:10px 20px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--text);font-size:1em;transition:.2s}
+.btn-opt:hover,.btn-opt.active{background:var(--accent);color:#fff}
+#btnStart{padding:14px 48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;font-size:1.15em;font-weight:600;margin-top:8px;transition:.2s}
+#btnStart:hover{transform:scale(1.05);box-shadow:0 4px 20px rgba(233,69,96,.4)}
+/* Game */
+#game{display:none;padding:10px;max-width:900px;margin:0 auto}
+/* Info bar */
+.info-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,.06);border-radius:10px;margin-bottom:10px;flex-wrap:wrap;gap:6px;font-size:.85em}
+.info-bar .turn-info{color:var(--gold);font-weight:600}
+.info-bar .deck-info{color:var(--dim)}
+/* Message area */
+.msg-area{text-align:center;padding:10px;min-height:40px;font-size:1em;color:var(--gold)}
+/* Player sections */
+.player-section{margin-bottom:16px;border-radius:14px;padding:12px;position:relative;transition:.3s}
+.player-section.current{background:rgba(233,69,96,.1);box-shadow:0 0 0 2px var(--accent)}
+.player-section.eliminated{opacity:.4;pointer-events:none}
+.player-name{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;font-size:.95em}
+.player-name .badge{font-size:.7em;padding:2px 8px;border-radius:6px;background:var(--accent);color:#fff}
+.player-name .elim-badge{font-size:.7em;padding:2px 8px;border-radius:6px;background:#555;color:#aaa}
+.cards-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:calc(var(--card-h) + 10px)}
+/* Cards */
+.card{width:var(--card-w);height:var(--card-h);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;position:relative;transition:.2s;flex-shrink:0;user-select:none}
+.card-back{background:linear-gradient(135deg,#2c3e50,#34495e);border:2px solid #4a6070;color:transparent}
+.card-back::after{content:'?';color:rgba(255,255,255,.25);font-size:1.4em}
+.card-black{background:linear-gradient(135deg,#1a1a2e,#2d2d44);border:2px solid #444;color:#e0e0e0}
+.card-white{background:linear-gradient(135deg,#e8e8e8,#f5f5f5);border:2px solid #ccc;color:#222}
+.card-joker{background:linear-gradient(135deg,#8e44ad,#9b59b6);border:2px solid #a66bbe;color:#fff}
+.card-joker::before{content:'鈽?;font-size:1.2em}
+.card-hidden-num{position:absolute;top:2px;left:4px;font-size:.6em;opacity:.5}
+.card-public{box-shadow:0 0 8px rgba(245,197,24,.5)}
+.card.selectable{cursor:pointer;animation:pulse-border 1.5s infinite}
+.card.selected-target{box-shadow:0 0 12px var(--accent);transform:scale(1.08)}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 4px rgba(233,69,96,.3)}50%{box-shadow:0 0 12px rgba(233,69,96,.7)}}
+/* Drawn card */
+.drawn-area{display:flex;align-items:center;gap:10px;justify-content:center;padding:10px;margin:8px 0;background:rgba(255,255,255,.04);border-radius:10px;flex-wrap:wrap}
+.drawn-label{font-size:.85em;color:var(--dim)}
+/* Guess panel */
+.guess-panel{background:rgba(255,255,255,.06);border-radius:12px;padding:16px;margin:10px 0;display:flex;flex-direction:column;gap:12px;align-items:center}
+.guess-panel h3{font-size:1em;color:var(--gold)}
+.guess-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.guess-row .btn-opt{padding:6px 14px;font-size:.85em;border-radius:8px}
+.guess-row .btn-opt.active{background:var(--accent)}
+/* Action buttons */
+.action-btns{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.btn-action{padding:10px 24px;border-radius:10px;font-size:.95em;font-weight:600;transition:.2s}
+.btn-action:hover{transform:scale(1.04)}
+.btn-confirm{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff}
+.btn-continue{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff}
+.btn-end-turn{background:linear-gradient(135deg,#2980b9,#3498db);color:#fff}
+.btn-pass{background:rgba(255,255,255,.1);color:var(--text)}
+/* Overlay */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:20px;text-align:center}
+#overlay h2{font-size:2em;color:var(--gold)}
+#overlay p{font-size:1.1em;max-width:400px;line-height:1.6}
+#overlay button{padding:14px 40px;border-radius:12px;background:var(--accent);color:#fff;font-size:1.1em;font-weight:600}
+/* Sort hint */
+.sort-hint{font-size:.8em;color:var(--dim);text-align:center;padding:4px}
+/* Responsive */
+@media(max-width:600px){:root{--card-w:42px;--card-h:62px}#setup h1{font-size:1.8em}.setup-group{padding:16px 20px;min-width:0;width:100%}.info-bar{font-size:.75em}}
+</style>
+</head>
+<body>
+<div id="setup">
+  <h1>馃攼 杈捐姮濂囧瘑鐮?/h1>
+  <p class="subtitle">鐚滃嚭瀵规墜鐨勭瀵嗘暟瀛楀簭鍒楋紒姣忓紶鐗岄兘闅愯棌鐫€涓€涓暟瀛楋紝鐢ㄤ綘鐨勬櫤鎱ф彮寮€璋滃簳銆?/p>
+  <div class="setup-group">
+    <label>閫夋嫨鐜╁浜烘暟</label>
+    <div class="btn-row" id="playerCountBtns">
+      <button class="btn-opt active" data-v="2">2浜?/button>
+      <button class="btn-opt" data-v="3">3浜?/button>
+      <button class="btn-opt" data-v="4">4浜?/button>
+    </div>
+  </div>
+  <div class="setup-group">
+    <label>娓告垙妯″紡</label>
+    <div class="btn-row" id="modeBtns">
+      <button class="btn-opt active" data-v="basic">鍩虹鐗堬紙鏃犻鐗岋級</button>
+      <button class="btn-opt" data-v="joker">杩涢樁鐗堬紙鏈夐鐗岋級</button>
+    </div>
+  </div>
+  <button id="btnStart">寮€濮嬫父鎴?馃幃</button>
+</div>
+<div id="game">
+  <div class="info-bar">
+    <span class="turn-info" id="turnInfo"></span>
+    <span class="deck-info" id="deckInfo"></span>
+  </div>
+  <div class="msg-area" id="msgArea"></div>
+  <div id="playerSections"></div>
+  <div id="actionArea"></div>
+</div>
+<div id="overlay">
+  <h2 id="overlayTitle"></h2>
+  <p id="overlayMsg"></p>
+  <button id="overlayBtn" onclick="location.reload()">鍐嶆潵涓€灞€</button>
+</div>
+
+<script>
+// ===== GAME STATE =====
+const G = {
+  playerCount: 2,
+  useJoker: false,
+  deck: [],
+  players: [],
+  currentPlayer: 0,
+  phase: 'setup', // setup, sort, draw, guess, insert, gameover
+  drawnCard: null,
+  guessTarget: null,
+  guessColor: null,
+  guessNumber: null,
+  guessIsJoker: false,
+  mustGuess: false,
+  humanIndex: 0,
+};
+
+// ===== SETUP UI =====
+document.querySelectorAll('#playerCountBtns .btn-opt').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#playerCountBtns .btn-opt').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    G.playerCount = +b.dataset.v;
+  };
+});
+document.querySelectorAll('#modeBtns .btn-opt').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#modeBtns .btn-opt').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    G.useJoker = b.dataset.v === 'joker';
+  };
+});
+document.getElementById('btnStart').onclick = startGame;
+
+// ===== CARD CREATION =====
+function createDeck() {
+  const deck = [];
+  for (let n = 0; n <= 11; n++) {
+    deck.push({ color: 'black', number: n, isJoker: false, revealed: false });
+    deck.push({ color: 'white', number: n, isJoker: false, revealed: false });
+  }
+  if (G.useJoker) {
+    deck.push({ color: 'joker', number: -1, isJoker: true, revealed: false });
+    deck.push({ color: 'joker', number: -1, isJoker: true, revealed: false });
+  }
+  return deck;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function sortCards(cards) {
+  return cards.slice().sort((a, b) => {
+    if (a.isJoker && b.isJoker) return 0;
+    if (a.isJoker) return -1;
+    if (b.isJoker) return 1;
+    if (a.number !== b.number) return a.number - b.number;
+    if (a.color === b.color) return 0;
+    return a.color === 'black' ? -1 : 1;
+  });
+}
+
+function cardLabel(c) {
+  if (c.isJoker) return '楝肩墝';
+  return (c.color === 'black' ? '榛? : '鐧?) + c.number;
+}
+
+function cardColorClass(c) {
+  if (c.isJoker) return 'card-joker';
+  return c.color === 'black' ? 'card-black' : 'card-white';
+}
+
+// ===== GAME START =====
+function startGame() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  G.deck = createDeck();
+  shuffle(G.deck);
+  const cardsPerPlayer = G.playerCount === 2 ? 4 : 3;
+  const names = ['浣?(鐜╁1)', '鐢佃剳2', '鐢佃剳3', '鐢佃剳4'];
+  G.players = [];
+  for (let i = 0; i < G.playerCount; i++) {
+    const hand = [];
+    for (let j = 0; j < cardsPerPlayer; j++) {
+      hand.push(G.deck.pop());
+    }
+    G.players.push({
+      name: names[i],
+      isHuman: i === 0,
+      cards: sortCards(hand),
+      eliminated: false,
+    });
+  }
+  G.humanIndex = 0;
+  G.currentPlayer = Math.floor(Math.random() * G.playerCount);
+  // Sort phase: show human their sorted cards, let them see; AI sorts silently
+  G.phase = 'sort';
+  G.sortAck = false;
+  render();
+  msg('娓告垙寮€濮嬶紒浣犵殑鐗屽凡鎸夊崌搴忔帓鍒楋紙榛戝乏鐧藉彸锛夈€傜‘璁ゅ悗鐐瑰嚮"鎴戝凡鐪嬬墝"銆?);
+}
+
+// ===== RENDER =====
+function render() {
+  const container = document.getElementById('playerSections');
+  container.innerHTML = '';
+  // Render players in order: human first, then others
+  const order = [G.humanIndex];
+  for (let i = 0; i < G.playerCount; i++) if (i !== G.humanIndex) order.push(i);
+
+  order.forEach(pi => {
+    const p = G.players[pi];
+    const sec = document.createElement('div');
+    sec.className = 'player-section' + (pi === G.currentPlayer ? ' current' : '') + (p.eliminated ? ' eliminated' : '');
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'player-name';
+    nameDiv.innerHTML = p.name;
+    if (pi === G.currentPlayer && !p.eliminated) nameDiv.innerHTML += '<span class="badge">褰撳墠鍥炲悎</span>';
+    if (p.eliminated) nameDiv.innerHTML += '<span class="elim-badge">宸插嚭灞€</span>';
+    sec.appendChild(nameDiv);
+
+    const row = document.createElement('div');
+    row.className = 'cards-row';
+
+    p.cards.forEach((c, ci) => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      const isOwn = pi === G.humanIndex;
+      const showFace = isOwn || c.revealed;
+
+      if (showFace) {
+        el.classList.add(cardColorClass(c));
+        if (c.isJoker) {
+          el.textContent = '';
+        } else {
+          el.textContent = c.number;
+        }
+        if (c.revealed && isOwn) el.classList.add('card-public');
+      } else {
+        el.classList.add('card-back');
+      }
+
+      // Selectable: during guess phase, clicking opponent unrevealed cards
+      if (G.phase === 'guess' && !p.eliminated && !c.revealed && pi !== G.humanIndex) {
+        el.classList.add('selectable');
+        if (G.guessTarget && G.guessTarget.playerIndex === pi && G.guessTarget.cardIndex === ci) {
+          el.classList.add('selected-target');
+        }
+        el.onclick = () => selectGuessTarget(pi, ci);
+      }
+      row.appendChild(el);
+    });
+
+    if (p.cards.every(c => c.revealed) && p.cards.length > 0 && !p.eliminated) {
+      // will be eliminated at end of check
+    }
+
+    sec.appendChild(row);
+    // Sort hint for own cards
+    if (isOwn && !p.eliminated && p.cards.length > 0) {
+      const hint = document.createElement('div');
+      hint.className = 'sort-hint';
+      hint.textContent = '鈫?浣犵殑鐗岋紙宸茶嚜鍔ㄥ崌搴忔帓鍒楋紝榛戝乏鐧藉彸锛?;
+      sec.appendChild(hint);
+    }
+    container.appendChild(sec);
+  });
+
+  // Action area
+  const aa = document.getElementById('actionArea');
+  aa.innerHTML = '';
+
+  // Turn info
+  const cp = G.players[G.currentPlayer];
+  document.getElementById('turnInfo').textContent = cp.eliminated ? '' : `鍥炲悎锛?{cp.name}`;
+  document.getElementById('deckInfo').textContent = `鐗屽爢鍓╀綑锛?{G.deck.length} 寮燻;
+
+  // Phase-specific UI
+  if (G.phase === 'sort' && !G.sortAck) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-action btn-confirm';
+    btn.textContent = '鎴戝凡鐪嬬墝锛屽紑濮嬫父鎴?;
+    btn.onclick = () => { G.sortAck = true; nextTurn(); };
+    aa.appendChild(btn);
+    return;
+  }
+
+  if (G.phase === 'draw') {
+    // Human player's turn to draw
+    if (cp.isHuman) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-action btn-confirm';
+      btn.textContent = '浠庣墝鍫嗘懜涓€寮犵墝';
+      btn.onclick = () => humanDraw();
+      aa.appendChild(btn);
+    } else {
+      // AI draws
+      aiTurn();
+    }
+    return;
+  }
+
+  if (G.phase === 'drawn') {
+    // Show drawn card and guess UI
+    const da = document.createElement('div');
+    da.className = 'drawn-area';
+    da.innerHTML = `<span class="drawn-label">浣犳懜鍒扮殑鐗岋細</span>`;
+    const c = G.drawnCard;
+    const el = document.createElement('div');
+    el.className = 'card ' + cardColorClass(c);
+    el.textContent = c.isJoker ? '' : c.number;
+    da.appendChild(el);
+    aa.appendChild(da);
+
+    // Guess panel
+    renderGuessPanel(aa);
+    return;
+  }
+
+  if (G.phase === 'guess-result') {
+    // After guess, show result and options
+    const da = document.createElement('div');
+    da.className = 'drawn-area';
+    da.innerHTML = `<span class="drawn-label">浣犳懜鍒扮殑鐗岋細</span>`;
+    const c = G.drawnCard;
+    const el = document.createElement('div');
+    el.className = 'card ' + cardColorClass(c);
+    el.textContent = c.isJoker ? '' : c.number;
+    da.appendChild(el);
+    aa.appendChild(da);
+
+    const btns = document.createElement('div');
+    btns.className = 'action-btns';
+    if (G.lastGuessCorrect) {
+      const btnC = document.createElement('button');
+      btnC.className = 'btn-action btn-continue';
+      btnC.textContent = '缁х画鐚滅墝';
+      btnC.onclick = () => { G.phase = 'drawn'; G.guessTarget = null; G.guessColor = null; G.guessNumber = null; G.guessIsJoker = false; render(); };
+      btns.appendChild(btnC);
+      const btnE = document.createElement('button');
+      btnE.className = 'btn-action btn-end-turn';
+      btnE.textContent = '缁撴潫鍥炲悎锛堟彃鍏ョ墝锛?;
+      btnE.onclick = () => { G.phase = 'insert'; insertHumanCard(false); };
+      btns.appendChild(btnE);
+    }
+    aa.appendChild(btns);
+    return;
+  }
+
+  if (G.phase === 'insert-wrong') {
+    // Wrong guess: show drawn card publicly and insert
+    const da = document.createElement('div');
+    da.className = 'drawn-area';
+    da.innerHTML = `<span class="drawn-label">鐚滈敊浜嗭紒浣犵殑鐗岃鍏紑锛?/span>`;
+    const c = G.drawnCard;
+    const el = document.createElement('div');
+    el.className = 'card ' + cardColorClass(c) + ' card-public';
+    el.textContent = c.isJoker ? '' : c.number;
+    da.appendChild(el);
+    aa.appendChild(da);
+    setTimeout(() => { insertHumanCard(true); }, 1200);
+    return;
+  }
+}
+
+function renderGuessPanel(aa) {
+  const gp = document.createElement('div');
+  gp.className = 'guess-panel';
+  gp.innerHTML = '<h3>馃攳 鐚滅墝锛氶€夋嫨鐩爣鍜屼綘鐨勭寽娴?/h3>';
+
+  // Target label
+  if (G.guessTarget) {
+    const tl = document.createElement('div');
+    tl.style.cssText = 'font-size:.85em;color:var(--dim)';
+    const tp = G.players[G.guessTarget.playerIndex];
+    tl.textContent = `鐩爣锛?{tp.name} 鐨勭 ${G.guessTarget.cardIndex + 1} 寮犵墝`;
+    gp.appendChild(tl);
+  }
+
+  // Color/joker choice
+  const colorRow = document.createElement('div');
+  colorRow.className = 'guess-row';
+  const colors = [{ v: 'black', l: '榛? }, { v: 'white', l: '鐧? }];
+  if (G.useJoker) colors.push({ v: 'joker', l: '楝肩墝' });
+  colors.forEach(({ v, l }) => {
+    const b = document.createElement('button');
+    b.className = 'btn-opt' + ((v === 'joker' && G.guessIsJoker) || (v !== 'joker' && G.guessColor === v && !G.guessIsJoker) ? ' active' : '');
+    b.textContent = l;
+    b.onclick = () => {
+      if (v === 'joker') { G.guessIsJoker = true; G.guessColor = null; G.guessNumber = null; }
+      else { G.guessIsJoker = false; G.guessColor = v; }
+      render();
+    };
+    colorRow.appendChild(b);
+  });
+  gp.appendChild(colorRow);
+
+  // Number choice (if not joker guess)
+  if (!G.guessIsJoker) {
+    const numRow = document.createElement('div');
+    numRow.className = 'guess-row';
+    for (let n = 0; n <= 11; n++) {
+      const b = document.createElement('button');
+      b.className = 'btn-opt' + (G.guessNumber === n ? ' active' : '');
+      b.textContent = n;
+      b.onclick = () => { G.guessNumber = n; render(); };
+      numRow.appendChild(b);
+    }
+    gp.appendChild(numRow);
+  }
+
+  // Confirm button
+  const canGuess = G.guessTarget && (G.guessIsJoker || (G.guessColor && G.guessNumber !== null));
+  if (canGuess) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-action btn-confirm';
+    const guessStr = G.guessIsJoker ? '楝肩墝' : cardLabel({ color: G.guessColor, number: G.guessNumber, isJoker: false });
+    btn.textContent = `纭鐚滄祴锛?{guessStr}`;
+    btn.onclick = () => executeGuess();
+    gp.appendChild(btn);
+  }
+
+  aa.appendChild(gp);
+}
+
+// ===== GAME LOGIC =====
+function nextTurn() {
+  // Check eliminations
+  checkEliminations();
+  if (checkWin()) return;
+
+  // Advance to next non-eliminated player
+  do {
+    G.currentPlayer = (G.currentPlayer + 1) % G.playerCount;
+  } while (G.players[G.currentPlayer].eliminated);
+
+  G.drawnCard = null;
+  G.guessTarget = null;
+  G.guessColor = null;
+  G.guessNumber = null;
+  G.guessIsJoker = false;
+
+  if (G.players[G.currentPlayer].isHuman) {
+    G.phase = 'draw';
+  } else {
+    G.phase = 'draw';
+  }
+  render();
+}
+
+function checkEliminations() {
+  G.players.forEach(p => {
+    if (!p.eliminated && p.cards.length > 0 && p.cards.every(c => c.revealed)) {
+      p.eliminated = true;
+      msg(`${p.name} 鎵€鏈夌墝宸插叕寮€锛屽嚭灞€锛乣);
+    }
+  });
+}
+
+function checkWin() {
+  const alive = G.players.filter(p => !p.eliminated);
+  if (alive.length === 1) {
+    G.phase = 'gameover';
+    const ov = document.getElementById('overlay');
+    ov.style.display = 'flex';
+    document.getElementById('overlayTitle').textContent = '馃帀 娓告垙缁撴潫锛?;
+    document.getElementById('overlayMsg').textContent = `${alive[0].name} 鑾疯儨锛佹渶鍚庣殑闅愯棌瀵嗙爜瀹堟姢鑰咃紒`;
+    return true;
+  }
+  return false;
+}
+
+function msg(t) { document.getElementById('msgArea').textContent = t; }
+
+// ===== HUMAN ACTIONS =====
+function humanDraw() {
+  if (G.deck.length === 0) {
+    msg('鐗屽爢宸茬┖锛佹父鎴忕粨鏉熴€?);
+    // Winner = most hidden cards
+    let best = null, bestCount = -1;
+    G.players.forEach(p => {
+      const hidden = p.cards.filter(c => !c.revealed).length;
+      if (hidden > bestCount) { bestCount = hidden; best = p; }
+    });
+    const ov = document.getElementById('overlay');
+    ov.style.display = 'flex';
+    document.getElementById('overlayTitle').textContent = '馃儚 鐗屽爢宸茬┖锛?;
+    document.getElementById('overlayMsg').textContent = `${best.name} 浠?${bestCount} 寮犻殣钘忕墝鑾疯儨锛乣;
+    return;
+  }
+  G.drawnCard = G.deck.pop();
+  G.phase = 'drawn';
+  G.guessTarget = null;
+  G.guessColor = null;
+  G.guessNumber = null;
+  G.guessIsJoker = false;
+  msg('浣犳懜鍒颁簡涓€寮犵墝锛堜粎浣犲彲瑙侊級銆傜幇鍦ㄨ鐚滃鎵嬬殑鐗岋紒');
+  render();
+}
+
+function selectGuessTarget(pi, ci) {
+  G.guessTarget = { playerIndex: pi, cardIndex: ci };
+  render();
+}
+
+function executeGuess() {
+  if (!G.guessTarget) return;
+  const target = G.players[G.guessTarget.playerIndex];
+  const card = target.cards[G.guessTarget.cardIndex];
+  const guessStr = G.guessIsJoker ? '楝肩墝' : cardLabel({ color: G.guessColor, number: G.guessNumber, isJoker: false });
+
+  let correct = false;
+  if (G.guessIsJoker) {
+    correct = card.isJoker;
+  } else {
+    if (card.isJoker) {
+      correct = false; // Guessing specific number on joker = wrong
+    } else {
+      correct = card.color === G.guessColor && card.number === G.guessNumber;
+    }
+  }
+
+  if (correct) {
+    card.revealed = true;
+    G.lastGuessCorrect = true;
+    msg(`鉁?鐚滃浜嗭紒${target.name} 鐨?${guessStr} 琚叕寮€锛佷綘鍙互缁х画鐚滄垨缁撴潫鍥炲悎銆俙);
+    G.phase = 'guess-result';
+    checkEliminations();
+    if (checkWin()) return;
+    render();
+  } else {
+    G.lastGuessCorrect = false;
+    G.drawnCard.revealed = true; // Penalty: reveal drawn card
+    msg(`鉂?鐚滈敊浜嗭紒浣犵殑鐗岃鍏紑鎯╃綒銆俙);
+    G.phase = 'insert-wrong';
+    render();
+  }
+}
+
+function insertHumanCard(isPublic) {
+  const p = G.players[G.humanIndex];
+  const c = G.drawnCard;
+  c.revealed = c.revealed || isPublic;
+  p.cards.push(c);
+  p.cards = sortCards(p.cards);
+  msg(isPublic ? '鐗屽凡鎸夎鍒欐彃鍏ュ簭鍒椼€? : '鐗屽凡绉樺瘑鎻掑叆搴忓垪銆?);
+  G.drawnCard = null;
+  setTimeout(() => nextTurn(), 800);
+}
+
+// ===== AI LOGIC =====
+function aiTurn() {
+  if (G.phase === 'gameover') return;
+  const ai = G.players[G.currentPlayer];
+  if (ai.eliminated) { nextTurn(); return; }
+
+  // Draw
+  if (!G.drawnCard) {
+    if (G.deck.length === 0) {
+      msg('鐗屽爢宸茬┖锛?);
+      let best = null, bestCount = -1;
+      G.players.forEach(p => {
+        const hidden = p.cards.filter(c => !c.revealed).length;
+        if (hidden > bestCount) { bestCount = hidden; best = p; }
+      });
+      const ov = document.getElementById('overlay');
+      ov.style.display = 'flex';
+      document.getElementById('overlayTitle').textContent = '馃儚 鐗屽爢宸茬┖锛?;
+      document.getElementById('overlayMsg').textContent = `${best.name} 浠?${bestCount} 寮犻殣钘忕墝鑾疯儨锛乣;
+      return;
+    }
+    G.drawnCard = G.deck.pop();
+  }
+
+  msg(`${ai.name} 鎽镐簡涓€寮犵墝...`);
+  render();
+
+  // AI guesses after a delay
+  setTimeout(() => aiGuess(), 1000);
+}
+
+function aiGuess() {
+  const ai = G.players[G.currentPlayer];
+  // Collect all known info (revealed cards)
+  const knownSet = new Set();
+  G.players.forEach(p => {
+    p.cards.forEach(c => {
+      if (c.revealed && !c.isJoker) knownSet.add(c.color + c.number);
+    });
+  });
+
+  // Pick a random opponent with hidden cards
+  const opponents = G.players.map((p, i) => ({ p, i })).filter(({ p, i }) => i !== G.currentPlayer && !p.eliminated && p.cards.some(c => !c.revealed));
+  if (opponents.length === 0) {
+    aiInsertAndEnd(ai, false);
+    return;
+  }
+  const opp = opponents[Math.floor(Math.random() * opponents.length)];
+  const hiddenIndices = opp.p.cards.map((c, i) => ({ c, i })).filter(x => !x.c.revealed);
+  if (hiddenIndices.length === 0) {
+    aiInsertAndEnd(ai, false);
+    return;
+  }
+  const target = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+
+  // AI guess strategy: try to guess something not yet revealed
+  let guessColor, guessNumber, guessIsJoker = false;
+  if (G.useJoker && Math.random() < 0.1) {
+    // Sometimes guess joker
+    guessIsJoker = true;
+  } else {
+    // Pick a random unguessed number/color combo
+    const available = [];
+    for (let n = 0; n <= 11; n++) {
+      if (!knownSet.has('black' + n)) available.push({ color: 'black', number: n });
+      if (!knownSet.has('white' + n)) available.push({ color: 'white', number: n });
+    }
+    if (available.length > 0) {
+      const g = available[Math.floor(Math.random() * available.length)];
+      guessColor = g.color;
+      guessNumber = g.number;
+    } else {
+      guessColor = Math.random() < 0.5 ? 'black' : 'white';
+      guessNumber = Math.floor(Math.random() * 12);
+    }
+  }
+
+  const guessStr = guessIsJoker ? '楝肩墝' : cardLabel({ color: guessColor, number: guessNumber, isJoker: false });
+  const card = opp.p.cards[target.i];
+
+  let correct = false;
+  if (guessIsJoker) {
+    correct = card.isJoker;
+  } else {
+    if (card.isJoker) correct = false;
+    else correct = card.color === guessColor && card.number === guessNumber;
+  }
+
+  if (correct) {
+    card.revealed = true;
+    msg(`${ai.name} 鐚?{opp.p.name}鐨勭墝鏄?${guessStr}... 鉁?鐚滃浜嗭紒`);
+    render();
+    checkEliminations();
+    if (checkWin()) return;
+    // AI may guess again (50% chance)
+    if (Math.random() < 0.5 && opp.p.cards.some(c => !c.revealed)) {
+      setTimeout(() => aiGuess(), 1200);
+    } else {
+      setTimeout(() => aiInsertAndEnd(ai, false), 1000);
+    }
+  } else {
+    G.drawnCard.revealed = true;
+    msg(`${ai.name} 鐚?{opp.p.name}鐨勭墝鏄?${guessStr}... 鉂?鐚滈敊浜嗭紒鐗岃鍏紑銆俙);
+    render();
+    setTimeout(() => aiInsertAndEnd(ai, true), 1000);
+  }
+}
+
+function aiInsertAndEnd(ai, isPublic) {
+  const c = G.drawnCard;
+  c.revealed = c.revealed || isPublic;
+  ai.cards.push(c);
+  ai.cards = sortCards(ai.cards);
+  G.drawnCard = null;
+  render();
+  setTimeout(() => nextTurn(), 800);
+}
+
+// Handle case where AI's turn begins
+const origRender = render;
+render = function() {
+  origRender();
+  // If it's AI's turn and phase is draw, trigger AI
+  if (G.phase === 'draw' && !G.players[G.currentPlayer].isHuman && !G.players[G.currentPlayer].eliminated) {
+    setTimeout(() => aiTurn(), 600);
+  }
+};
+</script>
+</body>
+</html>
